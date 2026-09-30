@@ -38,12 +38,12 @@ bunx hardhat test nodejs
 
 ### Make a deployment to Sepolia
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+Add an Ignition module under `ignition/modules/` to deploy the contract. You can deploy it to a locally simulated chain or to Sepolia.
 
 To run the deployment to a local chain:
 
 ```shell
-bunx hardhat ignition deploy ignition/modules/Counter.ts
+bunx hardhat ignition deploy ignition/modules/<Module>.ts
 ```
 
 To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
@@ -59,5 +59,5 @@ bunx hardhat keystore set SEPOLIA_PRIVATE_KEY
 After setting the variable, you can run the deployment with the Sepolia network:
 
 ```shell
-bunx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+bunx hardhat ignition deploy --network sepolia ignition/modules/<Module>.ts
 ```
