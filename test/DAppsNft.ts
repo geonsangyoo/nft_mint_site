@@ -88,9 +88,18 @@ describe("DAppsNft", async function () {
       await nft.write.safeMint([bob.account.address, "ipfs://b"]);
       await nft.write.safeMint([alice.account.address, "ipfs://c"]);
 
-      assert.equal(await nft.read.ownerOf([0n]), getAddress(alice.account.address));
-      assert.equal(await nft.read.ownerOf([1n]), getAddress(bob.account.address));
-      assert.equal(await nft.read.ownerOf([2n]), getAddress(alice.account.address));
+      assert.equal(
+        await nft.read.ownerOf([0n]),
+        getAddress(alice.account.address),
+      );
+      assert.equal(
+        await nft.read.ownerOf([1n]),
+        getAddress(bob.account.address),
+      );
+      assert.equal(
+        await nft.read.ownerOf([2n]),
+        getAddress(alice.account.address),
+      );
       assert.equal(await nft.read.tokenURI([1n]), "ipfs://b");
       assert.equal(await nft.read.balanceOf([alice.account.address]), 2n);
     });
@@ -119,7 +128,10 @@ describe("DAppsNft", async function () {
         account: bob.account,
       });
 
-      assert.equal(await nft.read.ownerOf([0n]), getAddress(bob.account.address));
+      assert.equal(
+        await nft.read.ownerOf([0n]),
+        getAddress(bob.account.address),
+      );
     });
 
     it("reverts when minting to the zero address", async function () {
@@ -249,7 +261,10 @@ describe("DAppsNft", async function () {
         account: alice.account,
       });
 
-      assert.equal(await nft.read.getApproved([0n]), getAddress(bob.account.address));
+      assert.equal(
+        await nft.read.getApproved([0n]),
+        getAddress(bob.account.address),
+      );
     });
 
     it("resumes transfers after unpause", async function () {
@@ -262,7 +277,10 @@ describe("DAppsNft", async function () {
         { account: alice.account },
       );
 
-      assert.equal(await nft.read.ownerOf([0n]), getAddress(bob.account.address));
+      assert.equal(
+        await nft.read.ownerOf([0n]),
+        getAddress(bob.account.address),
+      );
     });
   });
 
@@ -277,10 +295,17 @@ describe("DAppsNft", async function () {
         ),
         nft,
         "Transfer",
-        [getAddress(alice.account.address), getAddress(bob.account.address), 0n],
+        [
+          getAddress(alice.account.address),
+          getAddress(bob.account.address),
+          0n,
+        ],
       );
 
-      assert.equal(await nft.read.ownerOf([0n]), getAddress(bob.account.address));
+      assert.equal(
+        await nft.read.ownerOf([0n]),
+        getAddress(bob.account.address),
+      );
       assert.equal(await nft.read.tokenURI([0n]), TOKEN_URI);
     });
 
@@ -295,7 +320,10 @@ describe("DAppsNft", async function () {
         { account: bob.account },
       );
 
-      assert.equal(await nft.read.ownerOf([0n]), getAddress(bob.account.address));
+      assert.equal(
+        await nft.read.ownerOf([0n]),
+        getAddress(bob.account.address),
+      );
     });
 
     it("rejects transfers by unapproved accounts", async function () {
@@ -367,7 +395,10 @@ describe("DAppsNft", async function () {
       await nft.write.burn([0n], { account: alice.account });
       await nft.write.safeMint([bob.account.address, "ipfs://next"]);
 
-      assert.equal(await nft.read.ownerOf([1n]), getAddress(bob.account.address));
+      assert.equal(
+        await nft.read.ownerOf([1n]),
+        getAddress(bob.account.address),
+      );
     });
   });
 

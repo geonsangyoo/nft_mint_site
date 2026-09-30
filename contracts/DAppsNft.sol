@@ -12,9 +12,7 @@ contract DAppsNft is ERC721, ERC721URIStorage, ERC721Pausable, AccessControl, ER
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     uint256 private _nextTokenId;
 
-    constructor(address defaultAdmin, address pauser)
-        ERC721("DAppsNft", "DNFT")
-    {
+    constructor(address defaultAdmin, address pauser) ERC721("DAppsNft", "DNFT") {
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(PAUSER_ROLE, pauser);
     }
@@ -27,39 +25,30 @@ contract DAppsNft is ERC721, ERC721URIStorage, ERC721Pausable, AccessControl, ER
         _unpause();
     }
 
-    function safeMint(address to, string memory uri)
-        public
-    {
+    function safeMint(address to, string memory uri) public {
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
     }
 
     // The following functions are overrides required by Solidity.
-
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override(ERC721, ERC721Pausable)
-        returns (address)
-    {
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal override(ERC721, ERC721Pausable) returns (address) {
         return super._update(to, tokenId, auth);
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
+    function tokenURI(
+        uint256 tokenId
+    ) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721URIStorage, AccessControl)
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override(ERC721, ERC721URIStorage, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

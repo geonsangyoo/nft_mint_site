@@ -1,0 +1,9 @@
+node_modules
+artifacts
+cache
+coverage
+types
+ignition/deployments
+bun.lock
+.agents
+.claude
