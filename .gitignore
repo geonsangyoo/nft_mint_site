@@ -29,3 +29,6 @@
 
 # Snapshot cheatcodes output
 /snapshots
+
+# Hardhat Ignition deployment records
+/ignition/deployments

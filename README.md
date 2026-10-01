@@ -108,7 +108,7 @@ bunx hardhat ignition deploy ignition/modules/DAppsNft.ts --network fuji --param
 
 ### Deployment records
 
-Ignition writes each deployment to `ignition/deployments/chain-<chainId>/`. The deployed address is in `deployed_addresses.json`. Commit this directory: it lets Ignition resume and skip work that's already done, and it records the official contract address.
+Ignition writes each deployment to `ignition/deployments/chain-<chainId>/`. The deployed address is in `deployed_addresses.json`. This directory is git-ignored, so keep a local copy (or back it up): Ignition uses it to resume and skip work that's already done, and without it a re-run deploys a fresh contract.
 
 ### Verification
 
