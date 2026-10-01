@@ -1,63 +1,115 @@
-# Sample Hardhat 3 Project (`node:test` and `viem`)
+# DAppsNft — NFT Mint Site Contracts
 
-This project showcases a Hardhat 3 project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
+Smart contracts for the NFT mint site, built with [Hardhat 3](https://hardhat.org), [viem](https://viem.sh) and [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/5.x/).
 
-To learn more about Hardhat 3, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3](https://hardhat.org/hardhat3-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+## Contract: `DAppsNft`
 
-## Project Overview
+[`contracts/DAppsNft.sol`](contracts/DAppsNft.sol) is an ERC721 collection (`DAppsNft` / `DNFT`) composed from OpenZeppelin extensions:
 
-This example project includes:
+| Feature                | Source             | Functions                                                                                  |
+| ---------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| Ownership & transfers  | `ERC721`           | `balanceOf`, `ownerOf`, `transferFrom`, `safeTransferFrom`, `approve`, `setApprovalForAll` |
+| Per-token metadata URI | `ERC721URIStorage` | `tokenURI`                                                                                 |
+| Emergency pause        | `ERC721Pausable`   | `pause`, `unpause`, `paused` (`PAUSER_ROLE` only)                                          |
+| Burning                | `ERC721Burnable`   | `burn` (owner or approved)                                                                 |
+| Roles                  | `AccessControl`    | `grantRole`, `revokeRole`, `hasRole`                                                       |
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+- **Minting:** `safeMint(to, uri)` mints the next sequential token ID (starting at `0`) and stores its metadata URI. **Anyone can mint.** This is intentional for this test contract; add a `MINTER_ROLE` before using it in production.
+- **Token ID:** `safeMint` does not return the ID. Read it from the `Transfer(0x0, to, tokenId)` event in the transaction receipt.
+- **Roles:** the constructor grants `DEFAULT_ADMIN_ROLE` to `defaultAdmin` and `PAUSER_ROLE` to `pauser`. When paused, minting, transfers and burns all revert.
 
-## Usage
+## Project layout
 
-This project uses [bun](https://bun.sh) as its package manager. Install dependencies with:
+```text
+contracts/          Solidity sources
+test/               TypeScript integration tests (node:test + viem)
+ignition/modules/   Hardhat Ignition deployment modules
+scripts/            Standalone scripts run with `hardhat run`
+hardhat.config.ts   Compiler profiles, networks, verification
+```
+
+## Setup
+
+This project uses [bun](https://bun.sh) only (no npm/yarn/pnpm).
 
 ```shell
 bun install
 ```
 
-### Running Tests
+## Development
 
-To run all the tests in the project, execute the following command:
+| Command                 | Description                           |
+| ----------------------- | ------------------------------------- |
+| `bun run build`         | Compile contracts                     |
+| `bun run test`          | Run all tests (Solidity + TypeScript) |
+| `bun run test:solidity` | Run Solidity tests only               |
+| `bun run test:nodejs`   | Run TypeScript tests only             |
+| `bun run typecheck`     | Compile, then type-check TypeScript   |
+| `bun run format`        | Format all files with Prettier        |
+| `bun run format:check`  | Check formatting without writing      |
 
-```shell
-bunx hardhat test
-```
+Formatting uses Prettier with `prettier-plugin-solidity`. VS Code formats Solidity and TypeScript on save once the recommended Prettier extension is installed (see [`.vscode/`](.vscode/)).
 
-You can also selectively run the Solidity or `node:test` tests:
+Contracts compile with solc `0.8.34` targeting the **`cancun`** EVM, because Avalanche C-Chain may not support newer opcodes. Deployments use the `production` profile (optimizer enabled, 200 runs).
 
-```shell
-bunx hardhat test solidity
-bunx hardhat test nodejs
-```
+## Deployment
 
-### Make a deployment to Sepolia
+Deployment is done with [Hardhat Ignition](https://hardhat.org/ignition) using [`ignition/modules/DAppsNft.ts`](ignition/modules/DAppsNft.ts).
 
-Add an Ignition module under `ignition/modules/` to deploy the contract. You can deploy it to a locally simulated chain or to Sepolia.
+| Command                  | Network                                          | Chain ID |
+| ------------------------ | ------------------------------------------------ | -------- |
+| `bun run deploy:local`   | In-process simulated chain (state is discarded)  | 31337    |
+| `bun run deploy:sepolia` | Ethereum Sepolia, then verify on Etherscan       | 11155111 |
+| `bun run deploy:fuji`    | Avalanche Fuji C-Chain, then verify on Snowtrace | 43113    |
 
-To run the deployment to a local chain:
+### 1. Set secrets
 
-```shell
-bunx hardhat ignition deploy ignition/modules/<Module>.ts
-```
-
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
-
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-bunx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
-
-After setting the variable, you can run the deployment with the Sepolia network:
+Secrets are read as Hardhat configuration variables. Store them in the encrypted keystore (recommended) or set them as environment variables:
 
 ```shell
-bunx hardhat ignition deploy --network sepolia ignition/modules/<Module>.ts
+bunx hardhat keystore set SEPOLIA_RPC_URL       # Sepolia only
+bunx hardhat keystore set SEPOLIA_PRIVATE_KEY   # Sepolia only
+bunx hardhat keystore set FUJI_PRIVATE_KEY      # Fuji only
+bunx hardhat keystore set ETHERSCAN_API_KEY     # contract verification
 ```
+
+Fuji uses the public RPC endpoint `https://api.avax-test.network/ext/bc/C/rpc`, so it needs no RPC URL variable.
+
+### 2. Fund the deployer
+
+- Sepolia ETH: any Sepolia faucet
+- Fuji AVAX: [Core testnet faucet](https://core.app/tools/testnet-faucet)
+
+### 3. Deploy
+
+```shell
+bun run deploy:sepolia
+bun run deploy:fuji
+```
+
+By default, the deploying account becomes both `defaultAdmin` and `pauser`. To use other addresses (e.g. a multisig), create a parameters file:
+
+```json
+{
+  "DAppsNftModule": {
+    "defaultAdmin": "0x...",
+    "pauser": "0x..."
+  }
+}
+```
+
+and pass it to the deploy:
+
+```shell
+bunx hardhat ignition deploy ignition/modules/DAppsNft.ts --network fuji --parameters ignition/parameters.fuji.json --verify
+```
+
+> Double-check these addresses. Roles are granted only once, in the constructor. If `defaultAdmin` is wrong or `0x0`, the admin role cannot be recovered.
+
+### Deployment records
+
+Ignition writes each deployment to `ignition/deployments/chain-<chainId>/`. The deployed address is in `deployed_addresses.json`. Commit this directory: it lets Ignition resume and skip work that's already done, and it records the official contract address.
+
+### Verification
+
+`--verify` verifies the source through the Etherscan API, using `ETHERSCAN_API_KEY` for both Sepolia (Etherscan) and Fuji (Snowtrace). Etherscan's free API plan may not cover Avalanche. If verification fails with an access error, the contract is still deployed. Retry with a paid key, or verify manually on Snowtrace.

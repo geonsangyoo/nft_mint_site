@@ -7,10 +7,15 @@ export default defineConfig({
     profiles: {
       default: {
         version: "0.8.34",
+        settings: {
+          // Avalanche C-Chain supports opcodes up to Cancun; solc 0.8.34 defaults to Osaka.
+          evmVersion: "cancun",
+        },
       },
       production: {
         version: "0.8.34",
         settings: {
+          evmVersion: "cancun",
           optimizer: {
             enabled: true,
             runs: 200,
@@ -33,6 +38,18 @@ export default defineConfig({
       chainType: "l1",
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    },
+    fuji: {
+      type: "http",
+      chainType: "generic",
+      chainId: 43113,
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      accounts: [configVariable("FUJI_PRIVATE_KEY")],
+    },
+  },
+  verify: {
+    etherscan: {
+      apiKey: configVariable("ETHERSCAN_API_KEY"),
     },
   },
 });

@@ -8,7 +8,10 @@
     "test:nodejs": "hardhat test nodejs",
     "typecheck": "hardhat build && tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy:local": "hardhat ignition deploy ignition/modules/DAppsNft.ts",
+    "deploy:sepolia": "hardhat ignition deploy ignition/modules/DAppsNft.ts --network sepolia --verify",
+    "deploy:fuji": "hardhat ignition deploy ignition/modules/DAppsNft.ts --network fuji --verify"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1",
