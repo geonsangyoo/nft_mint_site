@@ -32,3 +32,17 @@
 
 # Hardhat Ignition deployment records
 /ignition/deployments
+
+# OS files
+.DS_Store
+
+# Next.js app (web/)
+/web/node_modules
+/web/.next/
+/web/out/
+/web/build
+/web/coverage
+/web/.vercel
+/web/*.tsbuildinfo
+/web/next-env.d.ts
+/web/*.pem

@@ -7,3 +7,4 @@ ignition/deployments
 bun.lock
 .agents
 .claude
+web/.next
