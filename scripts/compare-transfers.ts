@@ -1,11 +1,12 @@
-// Sends the three transfers used to compare Sepolia and Avalanche Fuji, and
+// Sends the transfers used to compare Sepolia and Avalanche Fuji, and
 // measures submit -> inclusion -> finality time and the fee paid for each.
 //
-//   bunx hardhat run scripts/compare-transfers.ts            # all three
+//   bunx hardhat run scripts/compare-transfers.ts            # every step
 //   STEP=sepolia bunx hardhat run scripts/compare-transfers.ts
 //   STEP=fuji    bunx hardhat run scripts/compare-transfers.ts
 //   STEP=c2p     bunx hardhat run scripts/compare-transfers.ts
 //   STEP=fuji,c2p bunx hardhat run scripts/compare-transfers.ts
+//   STEP=sepolia-eth,fuji-jpyc bunx hardhat run scripts/compare-transfers.ts
 //
 // Sepolia finality takes ~13-15 min, so it is only awaited with WAIT_FINALITY=1.
 import hre, { network } from "hardhat";
@@ -24,7 +25,7 @@ const { Context, addTxSignatures, evm, pvm, utils }: any =
 
 const RECIPIENT = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 const P_CHAIN_RECIPIENT = "P-fuji1sx5pazvmqthdzc2y3cwm6pwerze3vg8ccp0zuu";
-const JPYC_SEPOLIA = "0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29";
+const JPYC = "0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29";
 const AVAX_API = "https://api.avax-test.network";
 
 const steps = (process.env.STEP ?? "all").split(",");
@@ -41,7 +42,7 @@ async function sepoliaJpyc() {
   console.log("\n=== Sepolia: JPYC 10 (ERC-20 transfer) ===");
   const t0 = now();
   const hash = await wallet.writeContract({
-    address: JPYC_SEPOLIA,
+    address: JPYC,
     abi: erc20Abi,
     functionName: "transfer",
     args: [RECIPIENT, parseUnits("10", 18)],
@@ -69,6 +70,85 @@ async function sepoliaJpyc() {
   console.log(`gasUsed  ${receipt.gasUsed}`);
   console.log(`gasPrice ${formatUnits(receipt.effectiveGasPrice, 9)} gwei`);
   console.log(`fee      ${formatEther(fee)} ETH`);
+  console.log(`(rpc send ${secs(tSent - t0)})`);
+}
+
+async function sepoliaEth() {
+  const { viem } = await network.create("sepolia");
+  const publicClient = await viem.getPublicClient();
+  const [wallet] = await viem.getWalletClients();
+
+  console.log("\n=== Sepolia: ETH 0.01 (native transfer) ===");
+  const t0 = now();
+  const hash = await wallet.sendTransaction({
+    to: RECIPIENT,
+    value: parseEther("0.01"),
+  });
+  const tSent = now();
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash,
+    pollingInterval: 1_000,
+  });
+  const tIncluded = now();
+  console.log(`tx       ${hash}`);
+  console.log(`block    ${receipt.blockNumber}`);
+  console.log(`included ${secs(tIncluded - t0)} after submit`);
+
+  if (process.env.WAIT_FINALITY === "1") {
+    while (true) {
+      const finalized = await publicClient.getBlock({ blockTag: "finalized" });
+      if (finalized.number >= receipt.blockNumber) break;
+      await sleep(12_000);
+    }
+    console.log(`final    ${secs(now() - t0)} after submit`);
+  }
+  const fee = receipt.gasUsed * receipt.effectiveGasPrice;
+  console.log(`gasUsed  ${receipt.gasUsed}`);
+  console.log(`gasPrice ${formatUnits(receipt.effectiveGasPrice, 9)} gwei`);
+  console.log(`fee      ${formatEther(fee)} ETH`);
+  console.log(`(rpc send ${secs(tSent - t0)})`);
+}
+
+async function fujiJpyc() {
+  const { viem } = await network.create("fuji");
+  const publicClient = await viem.getPublicClient();
+  const [wallet] = await viem.getWalletClients();
+
+  // JPYC is deployed at the same address on Sepolia and Fuji.
+  const amount = parseUnits("10", 18);
+  const balance = await publicClient.readContract({
+    address: JPYC,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [wallet.account.address],
+  });
+  if (balance < amount) {
+    throw new Error(
+      `${wallet.account.address} holds ${formatUnits(balance, 18)} JPYC on Fuji; need at least 10`,
+    );
+  }
+
+  console.log("\n=== Fuji C-Chain: JPYC 10 (ERC-20 transfer) ===");
+  const t0 = now();
+  const hash = await wallet.writeContract({
+    address: JPYC,
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [RECIPIENT, amount],
+  });
+  const tSent = now();
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash,
+    pollingInterval: 200,
+  });
+  const tFinal = now();
+  const fee = receipt.gasUsed * receipt.effectiveGasPrice;
+  console.log(`tx       ${hash}`);
+  console.log(`block    ${receipt.blockNumber}`);
+  console.log(`final    ${secs(tFinal - t0)} after submit (accepted = final)`);
+  console.log(`gasUsed  ${receipt.gasUsed}`);
+  console.log(`gasPrice ${receipt.effectiveGasPrice} wei`);
+  console.log(`fee      ${formatEther(fee)} AVAX`);
   console.log(`(rpc send ${secs(tSent - t0)})`);
 }
 
@@ -199,5 +279,7 @@ async function fujiCToP() {
 }
 
 if (runs("sepolia")) await sepoliaJpyc();
+if (runs("sepolia-eth")) await sepoliaEth();
 if (runs("fuji")) await fujiAvax();
+if (runs("fuji-jpyc")) await fujiJpyc();
 if (runs("c2p")) await fujiCToP();
